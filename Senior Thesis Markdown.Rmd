@@ -1,0 +1,22 @@
+---
+title: "Senior Thesis"
+author: "Dustin Lind"
+date: "1/27/2022"
+output: html_document
+---
+
+
+## Install Packages
+```{r}
+library(tidyverse)
+```
+
+
+## Import Data
+```{r}
+Compustat_AF_1962_2920 <- read_csv("Compustat_AF_1962_2020.csv")
+CRSP_MS_1962_2020 <- read_csv("CRSP_MS_1962_2020.csv")
+```
+
+## Data Dictionary
+
