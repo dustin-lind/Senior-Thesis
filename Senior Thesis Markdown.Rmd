@@ -20,3 +20,63 @@ CRSP_MS_1962_2020 <- read_csv("CRSP_MS_1962_2020.csv")
 
 ## Data Dictionary
 
+### CRSP Monthly Stock (CRSP_MS_1962_2020)
+1. PERMNO - CRSP Permanent Company Number
+2. date - date
+3. SHRCD - Share Code
+4. EXCHCD - Exchange Code
+5. PERMCO - CRSP Permanent Company Number
+6. PRC - Price
+7. RET - Holding Period Return
+8. SHROUT - Number of Shares Outstanding
+
+### Compustat Annual Fundamentals (Compustat_AF_1962_2920)
+1. GVKEY - Standard and Poor's Identifier
+2. LPERMNO - Historical CRSP PERMNO Link to COMPUSTAT Record
+3. LPERMCO - Historical CRSP PERMCO Link to COMPUSTAT Record 
+4. datadate
+5. fyear
+6. indfmt
+7. consol
+8. popsrc
+9. datafmt
+10. conm - Company Name
+11. curcd
+12. fyr - Fiscal Year-End
+13. at - Assets - Total
+14. capx - Capital Expenditures
+15. gp - Gross Profit
+17. ni - Net Income
+18. rdip -  In Process R&D Expense
+19. revt - Revenue - Total
+20. xad - Advertising Expense
+21. xrd - Research and Development Expense
+22. xsga - Selling, General and Administrative Expense
+23. costat 
+24. ggroup - GIC Groups
+25. gind - GIC Industries
+26. gsector - GIC Sectors
+27. gsubind - GIC Sub-Industries
+
+## Data Cleaning/Filtering
+```{r}
+CRSP_MS <- CRSP_MS_1962_2020 %>% 
+  mutate(year = as.numeric(substr(date, 1, 4))) %>% # create year variable
+  mutate(month = as.numeric(substr(date, 5, 6))) # create month variable
+
+CRSP_MS <- CRSP_MS %>% 
+  distinct(, .keep_all = TRUE)
+  
+```
+
+
+```{r}
+Compustat_AF <- Compustat_AF_1962_2920 %>%
+  mutate(year = as.numeric(substr(datadate, 1, 4))) %>% # create year variable
+  mutate(month = as.numeric(substr(datadate, 5, 6))) # create month variable
+
+Compustat_AF <- Compustat_AF %>%
+  select(-c(GVKEY, indfmt, consol, popsrc, datafmt, curcd, costat, rdip)) # remove unnecessary variables
+```
+
+
