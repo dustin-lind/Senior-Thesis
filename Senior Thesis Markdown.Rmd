@@ -198,7 +198,7 @@ for (i in 1:5){ # the lags - 1 to 5 year lags
       mutate(xx_term = dev_x*dev_x) %>%
       mutate(sum_yx = sum(yx_term)) %>%
       mutate(sum_xx = sum(xx_term))
-    
+    # trying to do a find the regression coefficient for each of the lagged years (see my tests below)
   }
 }
 ```
