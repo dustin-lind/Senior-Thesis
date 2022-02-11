@@ -171,6 +171,7 @@ var_name <- function(i) {
 
 
 ```{r}
+vars <- c("b1", "b2", "b3", "b4", "b5")
 for (i in 1:5){ # the lags - 1 to 5 year lags
   for (t in 1978:2015){ # the data time range
     CRSP_Compustat_for <- CRSP_Compustat_for %>%
@@ -199,18 +200,46 @@ for (i in 1:5){ # the lags - 1 to 5 year lags
       mutate(sum_yx = sum(yx_term)) %>%
       mutate(sum_xx = sum(xx_term))
     # trying to do a find the regression coefficient for each of the lagged years (see my tests below)
+    CRSP_Compustat_for[[vars[i]]] = ifelse((fyear == t)*(rds_nm_ind >= 6)*(perc_pos>=0.5), (sum_yx/sum_xx), NA)
   }
 }
 ```
 
+### Tests (Ignore)
 
-### Tests
+```{r}
+C <- CRSP_Compustat_for
+vars <- c("b1", "b2", "b3", "b4", "b5")
+for (i in 1:5){ # the lags - 1 to 5 year lags
+  for (t in 1978:2015){ # the data time range
+      reg_period = (C['fyear']<=t)*(C['fyear']>=(t-7))
+      x_use = ifelse(reg_period, lag(C['RDI'], i), NA)
+      y_use = ifelse(reg_period, C['sales_growth'], NA)
+      x_use = ifelse(is.na(y_use), NA, x_use)
+      y_use = ifelse(is.na(y_use), NA, y_use)
+      
+      RDI_nm_chk = (x_use<NA)*reg_period
+      RDI_pos_chk = (x_use<NA)*(x_use>0)*reg_period
+      
+    
+    CRSP_Compustat_for <- CRSP_Compustat_for %>%
+      group_by(PERMNO) %>%
+      mutate(mean_x = mean(x_use)) %>%
+      mutate(mean_y = mean(y_use)) %>%
+      mutate(dev_x = x_use - mean_x) %>%
+      mutate(dev_y = y_use - mean_y) %>%
+      mutate(yx_term = dev_x*dev_y) %>%
+      mutate(xx_term = dev_x*dev_x) %>%
+      mutate(sum_yx = sum(yx_term)) %>%
+      mutate(sum_xx = sum(xx_term))
+  }
+}
+```
 
 ```{r}
 vars <- c("b1", "b2", "b3", "b4", "b5")
 for (i in 1:5){
-  CRSP_Compustat_for <- CRSP_Compustat_for %>%
-      mutate_(vars[i] = 1)
+  CRSP_Compustat_for[[vars[i]]] = 1
 }
 ```
 
