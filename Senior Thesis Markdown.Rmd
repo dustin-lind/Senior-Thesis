@@ -212,6 +212,24 @@ for (i in 1:5){
   CRSP_Compustat_for <- CRSP_Compustat_for %>%
       mutate_(vars[i] = 1)
 }
+
+# Don't use mutate. Use the [[]] instead to update the value because you already created the columns.
+for (i in 1:5){
+  CRSP_Compustat_for[[vars[i]]] <- 1
+}
+```
+
+```{r}
+# To update the values of b1, ... b5
+
+for (i in 1:5) {
+  varname <- paste0("b",i) # varname is b1, ..., b5 for each i
+  for (t in 1978:2015) {
+    if ( (fyear==t) & (rds_nm_ind>=6) & (perc_pos>=.5) ) {
+      CRSP_Compustat_for[[varname]] <- sum_yx/sum_xx
+    }
+  }
+}
 ```
 
 ```{r}
