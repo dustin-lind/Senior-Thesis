@@ -1,0 +1,224 @@
+---
+title: "Cohen Risk Adjusted Monthly Returns"
+author: "Dustin Lind"
+date: "3/29/2022"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(haven)
+library(stargazer)
+```
+
+```{r}
+ff_factors_monthly <- read_csv("F-F_Research_Data_5_Factors_2x3.csv",
+                       skip = 4, # top of the file reports data sources
+                       col_names = c("date",
+                                     "mkt-rf",
+                                     "smb",
+                                     "hml",
+                                     "rmw",
+                                     "cma",
+                                     "rf"),
+                       n_max  = 703) # the bottom of the csv file reports annual factors instead of monthly factors
+
+
+Cohen_portfolio_returns_monthly <- read_dta("Cohen_portfolio_construction_monthly.dta")
+```
+
+```{r}
+CRSP_Monthly <- read_dta("CRSP_MS_1962_2020.dta")
+
+CRSP_Monthly2 <- CRSP_Monthly %>%
+  select(-c(SHRCD,EXCHCD,PERMCO,RET)) %>%
+  mutate(year = as.numeric(format(date, '%Y'))) %>%
+  mutate(month = as.numeric(format(date, '%m'))) %>%
+  filter(!(year < 1980)) %>%
+  filter(month == 6)
+
+market_cap <- CRSP_Monthly2 %>% 
+  mutate(mkt_cap = abs(PRC)*SHROUT) %>%
+  select(-c(date,PRC,SHROUT,month))
+```
+
+```{r}
+Cohen_portfolio_returns_monthly_mktcap <- Cohen_portfolio_returns_monthly %>%
+  left_join(market_cap, by = c("PERMNO" = "PERMNO", "year" = "year"))
+```
+
+```{r}
+ff_factors_monthly2 <- ff_factors_monthly %>%
+  mutate(year = as.numeric(substr(date, 1, 4))) %>%
+  mutate(month = as.numeric(substr(date, 5, 6))) %>%
+  arrange(year, month)
+
+ff_factors_monthly3 <- ff_factors_monthly2 %>%
+  mutate("mkt-rf" = `mkt-rf`/100,
+         "smb" = smb/100,
+         "hml" = hml/100,
+         "rmw" = rmw/100,
+         "cma" = cma/100,
+         "rf" = rf/100
+  )
+```
+
+```{r}
+good_rd <- Cohen_portfolio_returns_monthly_mktcap %>%
+  filter(goodRD == 1) %>%
+  select(-badRD)
+
+bad_rd <- Cohen_portfolio_returns_monthly_mktcap %>%
+  filter(badRD == 1) %>%
+  select(-goodRD)
+```
+
+---------------------------------------
+
+## Good R&D Analysis
+```{r}
+ff_monthly_goodRD_returns <- good_rd %>%
+  group_by(year,month_temp) %>%
+  summarize(year_temp, EW_monthly_ret = mean(RET), W_monthly_ret = weighted.mean(RET, mkt_cap)) %>%
+  distinct() %>%
+  left_join(ff_factors_monthly3, by = c("year_temp" = "year", "month_temp" = "month")) %>%
+  mutate("r_excess_EW" = EW_monthly_ret - rf,
+         "r_excess_W" = W_monthly_ret - rf) %>%
+  filter(!(year_temp < 1980)) %>%
+  filter(!(year_temp==1980 & month_temp < 7)) %>%
+  filter(!(year_temp > 2020)) %>%
+  filter(!(year_temp==2020 & month_temp > 6)) %>%
+  arrange(year_temp,month_temp)
+
+```
+
+# Equal Weight
+```{r}
+goodRD_five_factor_reg_EW <- lm(r_excess_EW ~ `mkt-rf` + smb + hml + rmw + cma, data = ff_monthly_goodRD_returns)
+summary(goodRD_five_factor_reg_EW)
+```
+```{r}
+goodRD_three_factor_reg_EW <- lm(r_excess_EW ~ `mkt-rf` + smb + hml, data = ff_monthly_goodRD_returns)
+summary(goodRD_three_factor_reg_EW)
+```
+```{r}
+goodRD_excess_reg_EW <- lm(r_excess_EW ~ `mkt-rf`, data = ff_monthly_goodRD_returns)
+summary(goodRD_excess_reg_EW)
+```
+
+
+# Equity Weight
+```{r}
+goodRD_five_factor_reg_W <- lm(r_excess_W ~ `mkt-rf` + smb + hml + rmw + cma, data = ff_monthly_goodRD_returns)
+summary(goodRD_five_factor_reg_W)
+```
+```{r}
+goodRD_three_factor_reg_W <- lm(r_excess_W ~ `mkt-rf` + smb + hml, data = ff_monthly_goodRD_returns)
+summary(goodRD_three_factor_reg_W)
+```
+```{r}
+goodRD_excess_reg_W <- lm(r_excess_W ~ `mkt-rf`, data = ff_monthly_goodRD_returns)
+summary(goodRD_excess_reg_W)
+```
+
+------------------------------------
+
+## Bad R&D Analysis
+
+```{r}
+ff_monthly_badRD_returns <- bad_rd %>%
+  group_by(year,month_temp) %>%
+  summarize(year_temp, EW_monthly_ret = mean(RET), W_monthly_ret = weighted.mean(RET, mkt_cap)) %>%
+  distinct() %>%
+  left_join(ff_factors_monthly3, by = c("year_temp" = "year", "month_temp" = "month")) %>%
+  mutate("r_excess_EW" = EW_monthly_ret - rf,
+         "r_excess_W" = W_monthly_ret - rf) %>%
+  filter(!(year_temp < 1980)) %>%
+  filter(!(year_temp==1980 & month_temp < 7)) %>%
+  filter(!(year_temp > 2020)) %>%
+  filter(!(year_temp==2020 & month_temp > 6)) %>%
+  arrange(year_temp,month_temp)
+
+```
+
+```{r}
+badRD_five_factor_reg_EW <- lm(r_excess_EW ~ `mkt-rf` + smb + hml + rmw + cma, data = ff_monthly_badRD_returns)
+summary(badRD_five_factor_reg_EW)
+```
+```{r}
+badRD_three_factor_reg_EW <- lm(r_excess_EW ~ `mkt-rf` + smb + hml, data = ff_monthly_badRD_returns)
+summary(badRD_three_factor_reg_EW)
+```
+```{r}
+badRD_excess_reg_EW <- lm(r_excess_EW ~ `mkt-rf`, data = ff_monthly_badRD_returns)
+summary(badRD_excess_reg_EW)
+```
+
+# Equity Weighted
+```{r}
+badRD_five_factor_reg_W <- lm(r_excess_W ~ `mkt-rf` + smb + hml + rmw + cma, data = ff_monthly_badRD_returns)
+summary(badRD_five_factor_reg_W)
+```
+```{r}
+badRD_three_factor_reg_W <- lm(r_excess_W ~ `mkt-rf` + smb + hml, data = ff_monthly_badRD_returns)
+summary(badRD_three_factor_reg_W)
+```
+```{r}
+badRD_excess_reg_W <- lm(r_excess_W ~ `mkt-rf`, data = ff_monthly_badRD_returns)
+summary(badRD_excess_reg_W)
+```
+
+-------------------------------------------------
+
+
+## Spread Analysis
+```{r}
+bad_rd_summarized <- bad_rd %>%
+  group_by(year, month_temp) %>%
+  summarize(year_temp,EW_monthly_ret_badRD = mean(RET), W_monthly_ret_badRD = weighted.mean(RET, mkt_cap)) %>%
+  distinct()
+
+good_rd_summarized <- good_rd %>%
+  group_by(year, month_temp) %>%
+  summarize(year_temp,EW_monthly_ret_goodRD = mean(RET), W_monthly_ret_goodRD = weighted.mean(RET, mkt_cap)) %>%
+  distinct()
+
+Cohen_ff_monthly_spread_returns <- good_rd_summarized %>%
+  left_join(bad_rd_summarized, by = c("year","month_temp","year_temp")) %>%
+  left_join(ff_factors_monthly3, by = c("year_temp" = "year", "month_temp" = "month")) %>%
+  mutate("spread_r_EW" = EW_monthly_ret_goodRD - EW_monthly_ret_badRD,
+         "spread_r_W" = W_monthly_ret_goodRD - W_monthly_ret_badRD) %>%
+  filter(!(year_temp < 1980)) %>%
+  filter(!(year_temp==1980 & month_temp < 7)) %>%
+  filter(!(year_temp > 2020)) %>%
+  filter(!(year_temp==2020 & month_temp > 6)) %>%
+  arrange(year_temp,month_temp)
+```
+
+# Equal Weighted
+```{r}
+RDspread_five_factor_reg_EW <- lm(spread_r_EW ~ `mkt-rf` + smb + hml + rmw + cma, data = Cohen_ff_monthly_spread_returns)
+summary(RDspread_five_factor_reg_EW)
+```
+```{r}
+RDspread_three_factor_reg_EW <- lm(spread_r_EW ~ `mkt-rf` + smb + hml, data = Cohen_ff_monthly_spread_returns)
+summary(RDspread_three_factor_reg_EW)
+```
+```{r}
+RDspread_excess_reg_EW <- lm(spread_r_EW ~ `mkt-rf`, data = Cohen_ff_monthly_spread_returns)
+summary(RDspread_excess_reg_EW)
+```
+
+# Equity Weighted
+```{r}
+RDspread_five_factor_reg_W <- lm(spread_r_W ~ `mkt-rf` + smb + hml + rmw + cma, data = Cohen_ff_monthly_spread_returns)
+summary(RDspread_five_factor_reg_W)
+```
+```{r}
+RDspread_three_factor_reg_W <- lm(spread_r_W ~ `mkt-rf` + smb + hml, data = Cohen_ff_monthly_spread_returns)
+summary(RDspread_three_factor_reg_W)
+```
+```{r}
+RDspread_excess_reg_W <- lm(spread_r_W ~ `mkt-rf`, data = Cohen_ff_monthly_spread_returns)
+summary(RDspread_excess_reg_W)
+```

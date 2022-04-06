@@ -1,0 +1,107 @@
+---
+title: "Senior Thesis Visualizations"
+author: "Dustin Lind"
+date: "3/24/2022"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(haven)
+library(ggplot2)
+```
+
+```{r}
+portfolio_returns <- read_dta("portfolio_construction.dta")
+company_fundementals <- read_dta("Compustat_AF_1962_2020.dta")
+```
+
+```{r}
+company_fundementals_narrowed <- company_fundementals %>%
+  mutate(ggroup_num = as.numeric(ggroup),
+         gind_num = as.numeric(gind)) %>%
+  group_by(conm) %>%
+  summarize(ggroup = mean(ggroup_num), gind = mean(gind_num))
+```
+
+```{r}
+industry_summary <- portfolio_returns %>%
+  left_join(company_fundementals_narrowed, by = "conm")
+```
+
+```{r}
+industry_summary_goodSGA <- industry_summary %>%
+  filter(goodSGA == 0) %>%
+  filter(!(year < 1980 | year > 2020)) %>%
+  group_by(ggroup) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+```
+
+
+
+
+```{r}
+portfolio_returns_sum <- portfolio_returns %>%
+  group_by(goodSGA,year) %>%
+  summarize(num_comp = n()) %>%
+  mutate("Portfolio" = ifelse(goodSGA == 1,"GoodSG&A","BadSG&A")) %>%
+  filter(!(year < 1980 | year > 2020))
+```
+
+```{r}
+portfolio_returns_mean <- portfolio_returns %>%
+  filter(!(year < 1980 | year > 2020)) %>%
+  group_by(goodSGA,year) %>%
+  summarize(num_comp = n(),goodSGA) %>%
+  ungroup() %>%
+  group_by(goodSGA) %>%
+  summarize(nump_comp_mean = mean(num_comp)) %>%
+  mutate("Portfolio" = ifelse(goodSGA == 1,"GoodSG&A","BadSG&A"))
+
+portfolio_returns_mean
+```
+
+
+```{r}
+ggplot(data=portfolio_returns_sum, aes(x=year,y=num_comp,group=Portfolio)) +
+  geom_line(aes(color=Portfolio)) +
+  geom_point(aes(color=Portfolio)) +
+  geom_hline(data=portfolio_returns_mean, aes(yintercept=nump_comp_mean,col=Portfolio), linetype = "dashed") +
+  labs(x="Year",y="Number of Companies") +
+  theme_minimal() +
+  scale_color_brewer(palette="Set1")
+```
+
+```{r}
+goodSGA_company_summary <- portfolio_returns %>%
+  filter(goodSGA == 1) %>%
+  group_by(conm) %>%
+  summarize(number = n()) %>%
+  arrange(desc(number))
+
+goodSGA_company_summary
+```
+
+```{r}
+badSGA_company_summary <- portfolio_returns %>%
+  filter(badSGA == 1) %>%
+  group_by(conm) %>%
+  summarize(number = n()) %>%
+  arrange(desc(number)) %>%
+  head(10)
+
+badSGA_company_summary
+```
+
+
+```{r}
+ggplot(data=portfolio_returns, aes(x=conm)) +
+  geom_bar()
+```
+
+
+
+
+
+
