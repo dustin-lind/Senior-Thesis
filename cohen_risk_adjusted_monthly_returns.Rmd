@@ -23,6 +23,12 @@ ff_factors_monthly <- read_csv("F-F_Research_Data_5_Factors_2x3.csv",
                                      "rf"),
                        n_max  = 703) # the bottom of the csv file reports annual factors instead of monthly factors
 
+ff_momentum_factor <- read_csv("F-F_Momentum_Factor.csv",
+                               skip = 14,
+                               col_name = c("date",
+                                            "mom"),
+                               n_max = 1142)
+
 
 Cohen_portfolio_returns_monthly <- read_dta("Cohen_portfolio_construction_monthly.dta")
 ```
@@ -48,6 +54,11 @@ Cohen_portfolio_returns_monthly_mktcap <- Cohen_portfolio_returns_monthly %>%
 ```
 
 ```{r}
+ff_factors_monthly <- ff_factors_monthly %>%
+  left_join(ff_momentum_factor, by = "date")
+```
+
+```{r}
 ff_factors_monthly2 <- ff_factors_monthly %>%
   mutate(year = as.numeric(substr(date, 1, 4))) %>%
   mutate(month = as.numeric(substr(date, 5, 6))) %>%
@@ -59,7 +70,8 @@ ff_factors_monthly3 <- ff_factors_monthly2 %>%
          "hml" = hml/100,
          "rmw" = rmw/100,
          "cma" = cma/100,
-         "rf" = rf/100
+         "rf" = rf/100,
+         "mom" = mom/100
   )
 ```
 
@@ -98,6 +110,11 @@ goodRD_five_factor_reg_EW <- lm(r_excess_EW ~ `mkt-rf` + smb + hml + rmw + cma, 
 summary(goodRD_five_factor_reg_EW)
 ```
 ```{r}
+goodRD_four_factor_reg_EW <- lm(r_excess_EW ~ `mkt-rf` + smb + hml + mom, data = ff_monthly_goodRD_returns)
+summary(goodRD_four_factor_reg_EW)
+```
+
+```{r}
 goodRD_three_factor_reg_EW <- lm(r_excess_EW ~ `mkt-rf` + smb + hml, data = ff_monthly_goodRD_returns)
 summary(goodRD_three_factor_reg_EW)
 ```
@@ -112,6 +129,11 @@ summary(goodRD_excess_reg_EW)
 goodRD_five_factor_reg_W <- lm(r_excess_W ~ `mkt-rf` + smb + hml + rmw + cma, data = ff_monthly_goodRD_returns)
 summary(goodRD_five_factor_reg_W)
 ```
+```{r}
+goodRD_four_factor_reg_W <- lm(r_excess_W ~ `mkt-rf` + smb + hml + mom, data = ff_monthly_goodRD_returns)
+summary(goodRD_four_factor_reg_W)
+```
+
 ```{r}
 goodRD_three_factor_reg_W <- lm(r_excess_W ~ `mkt-rf` + smb + hml, data = ff_monthly_goodRD_returns)
 summary(goodRD_three_factor_reg_W)
@@ -146,6 +168,11 @@ badRD_five_factor_reg_EW <- lm(r_excess_EW ~ `mkt-rf` + smb + hml + rmw + cma, d
 summary(badRD_five_factor_reg_EW)
 ```
 ```{r}
+badRD_four_factor_reg_EW <- lm(r_excess_EW ~ `mkt-rf` + smb + hml + mom, data = ff_monthly_badRD_returns)
+summary(badRD_four_factor_reg_EW)
+```
+
+```{r}
 badRD_three_factor_reg_EW <- lm(r_excess_EW ~ `mkt-rf` + smb + hml, data = ff_monthly_badRD_returns)
 summary(badRD_three_factor_reg_EW)
 ```
@@ -159,6 +186,11 @@ summary(badRD_excess_reg_EW)
 badRD_five_factor_reg_W <- lm(r_excess_W ~ `mkt-rf` + smb + hml + rmw + cma, data = ff_monthly_badRD_returns)
 summary(badRD_five_factor_reg_W)
 ```
+```{r}
+badRD_four_factor_reg_W <- lm(r_excess_W ~ `mkt-rf` + smb + hml + mom, data = ff_monthly_badRD_returns)
+summary(badRD_four_factor_reg_W)
+```
+
 ```{r}
 badRD_three_factor_reg_W <- lm(r_excess_W ~ `mkt-rf` + smb + hml, data = ff_monthly_badRD_returns)
 summary(badRD_three_factor_reg_W)
@@ -201,6 +233,11 @@ RDspread_five_factor_reg_EW <- lm(spread_r_EW ~ `mkt-rf` + smb + hml + rmw + cma
 summary(RDspread_five_factor_reg_EW)
 ```
 ```{r}
+RDspread_four_factor_reg_EW <- lm(spread_r_EW ~ `mkt-rf` + smb + hml + mom, data = Cohen_ff_monthly_spread_returns)
+summary(RDspread_four_factor_reg_EW)
+```
+
+```{r}
 RDspread_three_factor_reg_EW <- lm(spread_r_EW ~ `mkt-rf` + smb + hml, data = Cohen_ff_monthly_spread_returns)
 summary(RDspread_three_factor_reg_EW)
 ```
@@ -214,6 +251,12 @@ summary(RDspread_excess_reg_EW)
 RDspread_five_factor_reg_W <- lm(spread_r_W ~ `mkt-rf` + smb + hml + rmw + cma, data = Cohen_ff_monthly_spread_returns)
 summary(RDspread_five_factor_reg_W)
 ```
+
+```{r}
+RDspread_four_factor_reg_W <- lm(spread_r_W ~ `mkt-rf` + smb + hml + mom, data = Cohen_ff_monthly_spread_returns)
+summary(RDspread_four_factor_reg_W)
+```
+
 ```{r}
 RDspread_three_factor_reg_W <- lm(spread_r_W ~ `mkt-rf` + smb + hml, data = Cohen_ff_monthly_spread_returns)
 summary(RDspread_three_factor_reg_W)
